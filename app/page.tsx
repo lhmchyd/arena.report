@@ -23,7 +23,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import {
   Plus,
-  Key,
+  KeyRound,
   TrendingUp,
   DollarSign,
   Target,
@@ -80,7 +80,6 @@ interface KeyData {
   location: string
   cost: number
   currentUses: number
-  maxUses: number
   totalRuns: number
   totalProfit: number
   runs: Array<{ runNumber: number; profit: number; date: string }>
@@ -116,6 +115,7 @@ interface ArmorData {
     medium: number
     high: number
   }
+  currentDurability?: number
 }
 
 const PROFILE_ICONS = [
@@ -176,30 +176,7 @@ export default function KeyTracker() {
   const [selectedKey, setSelectedKey] = useState<KeyData | null>(null)
   const [infoKey, setInfoKey] = useState<KeyData | null>(null)
   const [runProfit, setRunProfit] = useState(0)
-  const [keys, setKeys] = useState<KeyData[]>([
-    {
-      id: "1",
-      name: "Motel 201",
-      location: "Farm",
-      cost: 501000,
-      currentUses: 15,
-      maxUses: 15,
-      totalRuns: 0,
-      totalProfit: 0,
-      runs: [],
-    },
-    {
-      id: "2",
-      name: "Office 104",
-      location: "TV Station",
-      cost: 750000,
-      currentUses: 10,
-      maxUses: 10,
-      totalRuns: 0,
-      totalProfit: 0,
-      runs: [],
-    },
-  ])
+  const [keys, setKeys] = useState<KeyData[]>([])
 
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
@@ -208,7 +185,6 @@ export default function KeyTracker() {
     name: "",
     location: "",
     cost: 0,
-    maxUses: 15,
   })
 
   const [profiles, setProfiles] = useState<Profile[]>([])
@@ -225,7 +201,6 @@ export default function KeyTracker() {
     name: "",
     location: "",
     cost: "",
-    maxUses: "",
   })
 
   const [editingRun, setEditingRun] = useState<{ keyId: string; runNumber: number; profit: number } | null>(null)
@@ -374,30 +349,7 @@ export default function KeyTracker() {
         name: "Default Profile",
         icon: "User",
         createdAt: new Date().toISOString(),
-        keys: [
-          {
-            id: "1",
-            name: "Motel 201",
-            location: "Farm",
-            cost: 501000,
-            currentUses: 15,
-            maxUses: 15,
-            totalRuns: 0,
-            totalProfit: 0,
-            runs: [],
-          },
-          {
-            id: "2",
-            name: "Office 104",
-            location: "TV Station",
-            cost: 750000,
-            currentUses: 10,
-            maxUses: 10,
-            totalRuns: 0,
-            totalProfit: 0,
-            runs: [],
-          },
-        ],
+        keys: [],
         armors: [
           {
             id: "1",
@@ -473,11 +425,9 @@ export default function KeyTracker() {
   }
 
   const openRunDialog = (key: KeyData) => {
-    if (key.currentUses > 0) {
-      setSelectedKey(key)
-      setRunProfit(0)
-      setIsRunDialogOpen(true)
-    }
+    setSelectedKey(key)
+    setRunProfit(0)
+    setIsRunDialogOpen(true)
   }
 
   const openInfoDialog = (key: KeyData) => {
@@ -499,7 +449,7 @@ export default function KeyTracker() {
         if (key.id === selectedKey.id) {
           return {
             ...key,
-            currentUses: key.currentUses - 1,
+            currentUses: key.currentUses + 1,
             totalRuns: key.totalRuns + 1,
             totalProfit: key.totalProfit + runProfit,
             runs: [...key.runs, newRun],
@@ -519,7 +469,6 @@ export default function KeyTracker() {
       name: "",
       location: "",
       cost: "",
-      maxUses: "",
     }
 
     // Validation checks
@@ -535,10 +484,6 @@ export default function KeyTracker() {
       errors.cost = "Key cost must be greater than 0"
     }
 
-    if (newKey.maxUses <= 0) {
-      errors.maxUses = "Max uses must be greater than 0"
-    }
-
     setValidationErrors(errors)
 
     // If there are any errors, don't proceed
@@ -551,16 +496,15 @@ export default function KeyTracker() {
       name: newKey.name.trim(),
       location: newKey.location,
       cost: newKey.cost,
-      currentUses: newKey.maxUses,
-      maxUses: newKey.maxUses,
+      currentUses: 0,
       totalRuns: 0,
       totalProfit: 0,
       runs: [],
     }
 
     setKeys([...keys, key])
-    setNewKey({ name: "", location: "", cost: 0, maxUses: 15 })
-    setValidationErrors({ name: "", location: "", cost: "", maxUses: "" })
+    setNewKey({ name: "", location: "", cost: 0 })
+    setValidationErrors({ name: "", location: "", cost: "" })
     setIsAddDialogOpen(false)
   }
 
@@ -577,7 +521,7 @@ export default function KeyTracker() {
       newDurability: newArmor.newDurability,
       likeNewDurability: newArmor.likeNewDurability,
       wornDurability: newArmor.wornDurability,
-      currentDurability: newArmor.currentDurability, // Start with new durability
+      currentDurability: newArmor.newDurability, // Start with new durability
       condition: newArmor.condition,
       repairCost: 0,
       purchaseDate: new Date().toISOString(),
@@ -597,7 +541,6 @@ export default function KeyTracker() {
       newDurability: 70,
       likeNewDurability: 60,
       wornDurability: 49,
-      currentDurability: 70, // Reset to default
       condition: "Body Armor",
       repairDeductions: {
         low: 8.1,
@@ -652,7 +595,7 @@ export default function KeyTracker() {
   }
 
   const resetKeyUses = (keyId: string) => {
-    setKeys((prevKeys) => prevKeys.map((key) => (key.id === keyId ? { ...key, currentUses: key.maxUses } : key)))
+    setKeys((prevKeys) => prevKeys.map((key) => (key.id === keyId ? { ...key, currentUses: 0 } : key)))
   }
 
   const formatDate = (dateString: string) => {
@@ -665,9 +608,9 @@ export default function KeyTracker() {
     return key.totalProfit / key.runs.length
   }
 
-  const totalInvestment = keys.reduce((sum, key) => sum + key.cost, 0)
-  const totalProfit = keys.reduce((sum, key) => sum + key.totalProfit, 0)
-  const totalRuns = keys.reduce((sum, key) => sum + key.totalRuns, 0)
+  const totalInvestment = keys.reduce((sum, key) => sum + (key.cost || 0), 0)
+  const totalProfit = keys.reduce((sum, key) => sum + (key.totalProfit || 0), 0)
+  const totalRuns = keys.reduce((sum, key) => sum + (key.totalRuns || 0), 0)
 
   // Chart data preparation
   const locationData = LOCATIONS.map((location, index) => {
@@ -762,13 +705,13 @@ export default function KeyTracker() {
 
   const sidebarItems = [
     { id: "overview", label: "Overview", icon: Home },
-    { id: "keys", label: "Key Management", icon: Key },
+    { id: "keys", label: "Key Management", icon: KeyRound }, // Changed from Key to KeyRound
     { id: "analytics", label: "Analytics", icon: BarChart3 },
     { id: "settings", label: "Settings", icon: Settings },
   ]
 
   const mainTabs = [
-    { id: "keys", label: "Key Tracker", icon: Key },
+    { id: "keys", label: "Key Tracker", icon: KeyRound }, // Changed from Key to KeyRound
     { id: "armor", label: "Armor Durability", icon: Shield },
   ]
 
@@ -950,8 +893,6 @@ export default function KeyTracker() {
     setSelectedRepairNPC("")
   }
 
-
-
   // Export/Import functions
   const exportArmors = () => {
     const exportPayload = {
@@ -1073,7 +1014,7 @@ export default function KeyTracker() {
         return (
           <div className="space-y-6">
             <div>
-              <h2 className="text-2xl font-bold tracking-tight">Dashboard Overview</h2>
+              <h2 className="text-2xl font-bold tracking-tight text-slate-50">Dashboard Overview</h2>
               <p className="text-muted-foreground">Track your key performance and profitability</p>
             </div>
 
@@ -1085,7 +1026,7 @@ export default function KeyTracker() {
                   <DollarSign className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">${totalInvestment.toLocaleString()}</div>
+                  <div className="text-2xl font-bold">${(totalInvestment || 0).toLocaleString()}</div>
                   <div className="flex items-center space-x-2 text-xs text-muted-foreground">
                     <TrendingUp className="h-3 w-3" />
                     <span>Total spent on keys</span>
@@ -1099,7 +1040,7 @@ export default function KeyTracker() {
                   <TrendingUp className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-green-600">${totalProfit.toLocaleString()}</div>
+                  <div className="text-2xl font-bold text-green-600">${(totalProfit || 0).toLocaleString()}</div>
                   <div className="flex items-center space-x-2 text-xs text-muted-foreground">
                     <TrendingUp className="h-3 w-3 text-green-600" />
                     <span>Revenue from all runs</span>
@@ -1113,7 +1054,9 @@ export default function KeyTracker() {
                   <Target className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{totalRuns}</div>
+                  <div className="text-2xl font-bold">
+                    {keys.reduce((total, key) => total + (key.runs?.length || 0), 0)}
+                  </div>
                   <div className="flex items-center space-x-2 text-xs text-muted-foreground">
                     <Target className="h-3 w-3" />
                     <span>Completed key runs</span>
@@ -1124,7 +1067,7 @@ export default function KeyTracker() {
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Net Profit</CardTitle>
-                  {totalProfit - totalInvestment >= 0 ? (
+                  {(totalProfit || 0) - (totalInvestment || 0) >= 0 ? (
                     <TrendingUp className="h-4 w-4 text-green-600" />
                   ) : (
                     <TrendingDown className="h-4 w-4 text-red-600" />
@@ -1132,12 +1075,12 @@ export default function KeyTracker() {
                 </CardHeader>
                 <CardContent>
                   <div
-                    className={`text-2xl font-bold ${totalProfit - totalInvestment >= 0 ? "text-green-600" : "text-red-600"}`}
+                    className={`text-2xl font-bold ${(totalProfit || 0) - (totalInvestment || 0) >= 0 ? "text-green-600" : "text-red-600"}`}
                   >
-                    ${(totalProfit - totalInvestment).toLocaleString()}
+                    ${((totalProfit || 0) - (totalInvestment || 0)).toLocaleString()}
                   </div>
                   <div className="flex items-center space-x-2 text-xs text-muted-foreground">
-                    {totalProfit - totalInvestment >= 0 ? (
+                    {(totalProfit || 0) - (totalInvestment || 0) >= 0 ? (
                       <TrendingUp className="h-3 w-3 text-green-600" />
                     ) : (
                       <TrendingDown className="h-3 w-3 text-red-600" />
@@ -1206,7 +1149,7 @@ export default function KeyTracker() {
                                 />
                                 {name === "cumulative" ? "Cumulative Profit" : name}
                                 <div className="ml-auto flex items-baseline gap-0.5 font-mono font-medium tabular-nums text-foreground">
-                                  ${Number(value).toLocaleString()}
+                                  ${(Number(value) || 0).toLocaleString()}
                                 </div>
                               </>
                             )}
@@ -1254,7 +1197,7 @@ export default function KeyTracker() {
                               cx="50%"
                               cy="50%"
                               outerRadius={80}
-                              label={({ location, profit }) => `${location}: $${profit.toLocaleString()}`}
+                              label={({ location, profit }) => `${location}: $${(profit || 0).toLocaleString()}`}
                             >
                               {locationData.map((entry, index) => (
                                 <Cell key={`cell-${index}`} fill={entry.fill} />
@@ -1275,7 +1218,7 @@ export default function KeyTracker() {
                                         </div>
                                         <div className="flex flex-col">
                                           <span className="text-[0.70rem] uppercase text-muted-foreground">Profit</span>
-                                          <span className="font-bold">${data.profit.toLocaleString()}</span>
+                                          <span className="font-bold">${(data.profit || 0).toLocaleString()}</span>
                                         </div>
                                       </div>
                                     </div>
@@ -1389,9 +1332,9 @@ export default function KeyTracker() {
                                       <div className="flex justify-between items-center">
                                         <span className="text-xs text-muted-foreground">Total Profit:</span>
                                         <span
-                                          className={`text-xs font-medium ${dayData.profit >= 0 ? "text-green-600" : "text-red-600"}`}
+                                          className={`text-xs font-medium ${(dayData.profit || 0) >= 0 ? "text-green-600" : "text-red-600"}`}
                                         >
-                                          ${dayData.profit.toLocaleString()}
+                                          ${(dayData.profit || 0).toLocaleString()}
                                         </span>
                                       </div>
                                       <div className="flex justify-between items-center">
@@ -1404,9 +1347,9 @@ export default function KeyTracker() {
                                           <div key={idx} className="flex justify-between items-center text-xs">
                                             <span className="truncate max-w-[100px]">{run.keyName}</span>
                                             <span
-                                              className={`font-medium ${run.profit >= 0 ? "text-green-600" : "text-red-600"}`}
+                                              className={`font-medium ${(run.profit || 0) >= 0 ? "text-green-600" : "text-red-600"}`}
                                             >
-                                              ${run.profit.toLocaleString()}
+                                              ${(run.profit || 0).toLocaleString()}
                                             </span>
                                           </div>
                                         ))}
@@ -1465,7 +1408,7 @@ export default function KeyTracker() {
                     <div key={key.id} className="flex items-center justify-between p-4 border rounded-lg">
                       <div className="flex items-center space-x-4">
                         <div className="p-2 bg-primary/10 rounded-lg">
-                          <Key className="h-4 w-4 text-primary" />
+                          <KeyRound className="h-4 w-4 text-primary" />
                         </div>
                         <div>
                           <p className="font-medium">{key.name}</p>
@@ -1473,8 +1416,8 @@ export default function KeyTracker() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="font-medium">${key.totalProfit.toLocaleString()}</p>
-                        <p className="text-sm text-muted-foreground">{key.totalRuns} runs</p>
+                        <p className="font-medium">${(key.totalProfit || 0).toLocaleString()}</p>
+                        <p className="text-sm text-muted-foreground">{key.totalRuns || 0} runs</p>
                       </div>
                     </div>
                   ))}
@@ -1489,7 +1432,7 @@ export default function KeyTracker() {
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-2xl font-bold tracking-tight">Key Management</h2>
+                <h2 className="text-2xl font-bold tracking-tight text-slate-50">Key Management</h2>
                 <p className="text-muted-foreground">Manage your keys and track their usage</p>
               </div>
               <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
@@ -1516,7 +1459,7 @@ export default function KeyTracker() {
                             setValidationErrors({ ...validationErrors, name: "" })
                           }
                         }}
-                        placeholder="e.g., Motel 201"
+                        placeholder="e.g., Key Name"
                         className={validationErrors.name ? "border-red-500" : ""}
                       />
                       {validationErrors.name && <p className="text-sm text-red-500">{validationErrors.name}</p>}
@@ -1567,24 +1510,6 @@ export default function KeyTracker() {
                       />
                       {validationErrors.cost && <p className="text-sm text-red-500">{validationErrors.cost}</p>}
                     </div>
-
-                    <div className="grid gap-2">
-                      <Label htmlFor="maxUses">Max Uses</Label>
-                      <Input
-                        id="maxUses"
-                        type="number"
-                        value={newKey.maxUses}
-                        onChange={(e) => {
-                          setNewKey({ ...newKey, maxUses: Number(e.target.value) })
-                          if (validationErrors.maxUses) {
-                            setValidationErrors({ ...validationErrors, maxUses: "" })
-                          }
-                        }}
-                        placeholder="15"
-                        className={validationErrors.maxUses ? "border-red-500" : ""}
-                      />
-                      {validationErrors.maxUses && <p className="text-sm text-red-500">{validationErrors.maxUses}</p>}
-                    </div>
                   </div>
                   <DialogFooter>
                     <Button onClick={addKey}>Add Key</Button>
@@ -1602,8 +1527,7 @@ export default function KeyTracker() {
                         <TableHead>Key Name</TableHead>
                         <TableHead>Location</TableHead>
                         <TableHead>Cost</TableHead>
-                        <TableHead>Uses</TableHead>
-                        <TableHead>Total Runs</TableHead>
+                        <TableHead>Key Uses</TableHead>
                         <TableHead>Total Profit</TableHead>
                         <TableHead>ROI</TableHead>
                         <TableHead>Actions</TableHead>
@@ -1614,20 +1538,17 @@ export default function KeyTracker() {
                         <TableRow key={key.id}>
                           <TableCell className="font-medium">{key.name}</TableCell>
                           <TableCell>{key.location}</TableCell>
-                          <TableCell>${key.cost.toLocaleString()}</TableCell>
+                          <TableCell>${(key.cost || 0).toLocaleString()}</TableCell>
                           <TableCell>
-                            <Badge variant={key.currentUses > 0 ? "default" : "destructive"}>
-                              {key.currentUses}/{key.maxUses}
-                            </Badge>
+                            <Badge variant="default">{key.currentUses || 0}</Badge>
                           </TableCell>
-                          <TableCell>{key.totalRuns}</TableCell>
-                          <TableCell className="text-green-600">${key.totalProfit.toLocaleString()}</TableCell>
+                          <TableCell className="text-green-600">${(key.totalProfit || 0).toLocaleString()}</TableCell>
                           <TableCell className={calculateROI(key) >= 0 ? "text-green-600" : "text-red-600"}>
                             {calculateROI(key).toFixed(1)}%
                           </TableCell>
                           <TableCell>
                             <div className="flex gap-2">
-                              <Button size="sm" onClick={() => openRunDialog(key)} disabled={key.currentUses === 0}>
+                              <Button size="sm" onClick={() => openRunDialog(key)}>
                                 Run
                               </Button>
                               <Button size="sm" variant="outline" onClick={() => openInfoDialog(key)}>
@@ -1662,7 +1583,7 @@ export default function KeyTracker() {
         return (
           <div className="space-y-6">
             <div>
-              <h2 className="text-2xl font-bold tracking-tight">Analytics</h2>
+              <h2 className="text-2xl font-bold tracking-tight text-slate-50">Analytics</h2>
               <p className="text-muted-foreground">Detailed insights into your key performance</p>
             </div>
 
@@ -1704,8 +1625,8 @@ export default function KeyTracker() {
                   <div className="space-y-4">
                     {LOCATIONS.map((location) => {
                       const locationKeys = keys.filter((key) => key.location === location)
-                      const locationProfit = locationKeys.reduce((sum, key) => sum + key.totalProfit, 0)
-                      const locationRuns = locationKeys.reduce((sum, key) => sum + key.totalRuns, 0)
+                      const locationProfit = locationKeys.reduce((sum, key) => sum + (key.totalProfit || 0), 0)
+                      const locationRuns = locationKeys.reduce((sum, key) => sum + (key.totalRuns || 0), 0)
 
                       return (
                         <div key={location} className="flex items-center justify-between">
@@ -1714,7 +1635,7 @@ export default function KeyTracker() {
                             <p className="text-sm text-muted-foreground">{locationKeys.length} keys</p>
                           </div>
                           <div className="text-right">
-                            <p className="font-medium text-green-600">${locationProfit.toLocaleString()}</p>
+                            <p className="font-medium text-green-600">${(locationProfit || 0).toLocaleString()}</p>
                             <p className="text-sm text-muted-foreground">{locationRuns} runs</p>
                           </div>
                         </div>
@@ -1731,7 +1652,7 @@ export default function KeyTracker() {
         return (
           <div className="space-y-6">
             <div>
-              <h2 className="text-2xl font-bold tracking-tight">Settings</h2>
+              <h2 className="text-2xl font-bold tracking-tight text-slate-50">Settings</h2>
               <p className="text-muted-foreground">Manage your application preferences</p>
             </div>
 
@@ -1833,7 +1754,7 @@ export default function KeyTracker() {
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-bold tracking-tight">Armor Durability Management</h2>
+              <h2 className="text-2xl font-bold tracking-tight text-slate-50">Armor Durability Management</h2>
               <p className="text-muted-foreground">Track and manage your body armor collection</p>
             </div>
             <div className="flex gap-2">
@@ -2127,24 +2048,32 @@ export default function KeyTracker() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {filteredArmors.map((armor) => {
               return (
-                <Card key={armor.id} className="relative overflow-hidden">
-                  <CardHeader className="pb-2">
+                <Card key={armor.id} className="relative overflow-hidden border bg-card shadow-sm">
+                  <CardHeader className="pb-2 pt-3 px-3">
                     <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <CardTitle className="text-sm font-medium truncate">{armor.name}</CardTitle>
-                        <div className="flex items-center gap-2 mt-1">
-                          <Badge variant="outline" className="text-xs">
+                      <div className="flex-1 space-y-1">
+                        <CardTitle className="text-sm font-semibold text-foreground leading-tight">
+                          {armor.name}
+                        </CardTitle>
+                        <div className="flex items-center gap-1">
+                          <Badge
+                            variant="outline"
+                            className="text-xs px-1.5 py-0.5 border-primary/20 bg-primary/10 text-primary"
+                          >
                             Class {armor.armorClass}
                           </Badge>
-                          <Badge variant="default" className="text-xs">
+                          <Badge
+                            variant="default"
+                            className="text-xs px-1.5 py-0.5 bg-secondary text-secondary-foreground"
+                          >
                             {armor.condition}
                           </Badge>
                         </div>
                       </div>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm">
-                            <MoreHorizontal className="h-4 w-4" />
+                          <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                            <MoreHorizontal className="h-3 w-3" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
@@ -2164,52 +2093,64 @@ export default function KeyTracker() {
                       </DropdownMenu>
                     </div>
                   </CardHeader>
-                  <CardContent className="space-y-3">
-                    {/* Durability Thresholds */}
-                    <div className="grid grid-cols-3 gap-2 text-xs">
-                      <div className="text-left">
-                        <span className="text-muted-foreground">New:</span>
-                        <p className="font-medium text-green-600">{armor.newDurability}</p>
-                      </div>
-                      <div className="text-left">
-                        <span className="text-muted-foreground">Like New:</span>
-                        <p className="font-medium text-yellow-600">{armor.likeNewDurability}</p>
-                      </div>
-                      <div className="text-left">
-                        <span className="text-muted-foreground">Worn:</span>
-                        <p className="font-medium text-red-600">{armor.wornDurability}</p>
+
+                  <CardContent className="space-y-3 px-3 pb-3">
+                    {/* Durability Section - Compact */}
+                    <div className="bg-muted/20 rounded-md p-2">
+                      <div className="text-xs font-medium text-muted-foreground mb-1">Durability</div>
+                      <div className="grid grid-cols-3 gap-2">
+                        <div className="text-center p-1.5 rounded bg-green-500/10">
+                          <div className="text-xs text-green-600 font-medium">New</div>
+                          <div className="text-sm font-bold text-green-600">{armor.newDurability}</div>
+                        </div>
+                        <div className="text-center p-1.5 rounded bg-yellow-500/10">
+                          <div className="text-xs text-yellow-600 font-medium">Like New</div>
+                          <div className="text-sm font-bold text-yellow-600">{armor.likeNewDurability}</div>
+                        </div>
+                        <div className="text-center p-1.5 rounded bg-red-500/10">
+                          <div className="text-xs text-red-600 font-medium">Worn</div>
+                          <div className="text-sm font-bold text-red-600">{armor.wornDurability}</div>
+                        </div>
                       </div>
                     </div>
 
-                    {/* Protected Areas */}
-                    <div className="space-y-1">
-                      <span className="text-xs text-muted-foreground">Protected Areas:</span>
+                    {/* Protected Areas - Compact */}
+                    <div className="bg-accent/20 rounded-md p-2">
+                      <div className="text-xs font-medium text-muted-foreground mb-1">Protected Areas</div>
                       <div className="flex flex-wrap gap-1">
                         {armor.protectedAreas.map((area) => (
-                          <Badge key={area} variant="secondary" className="text-xs">
+                          <Badge
+                            key={area}
+                            variant="secondary"
+                            className="text-xs px-1.5 py-0.5 bg-primary/10 text-primary"
+                          >
                             {area}
                           </Badge>
                         ))}
                       </div>
                     </div>
 
-                    {/* Armor Stats */}
+                    {/* Stats Grid - Compact */}
                     <div className="grid grid-cols-2 gap-2 text-xs">
-                      <div>
-                        <span className="text-muted-foreground">Material:</span>
-                        <p className="font-medium">{armor.material}</p>
+                      <div className="space-y-1">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Material:</span>
+                          <span className="font-medium">{armor.material}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Weight:</span>
+                          <span className="font-medium">{armor.weight}</span>
+                        </div>
                       </div>
-                      <div>
-                        <span className="text-muted-foreground">Weight:</span>
-                        <p className="font-medium">{armor.weight}</p>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Speed:</span>
-                        <p className="font-medium text-red-600">{armor.movementSpeed}</p>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Ergo:</span>
-                        <p className="font-medium text-red-600">{armor.ergonomics}</p>
+                      <div className="space-y-1">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Speed:</span>
+                          <span className="font-medium text-red-600">{armor.movementSpeed}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Ergo:</span>
+                          <span className="font-medium text-red-600">{armor.ergonomics}</span>
+                        </div>
                       </div>
                     </div>
                   </CardContent>
@@ -2242,7 +2183,7 @@ export default function KeyTracker() {
   }
 
   const openAddDialog = () => {
-    setValidationErrors({ name: "", location: "", cost: "", maxUses: "" })
+    setValidationErrors({ name: "", location: "", cost: "" })
     setIsAddDialogOpen(true)
   }
 
@@ -2373,7 +2314,7 @@ export default function KeyTracker() {
           (run) => `
           <tr style="border-bottom:1px solid #e5e7eb;">
             <td style="padding:6px 8px; text-align:right; width:56px;">#${run.runNumber}</td>
-            <td style="padding:6px 8px; font-weight:700; color:${run.profit >= 0 ? "#16a34a" : "#dc2626"};">$${run.profit.toLocaleString()}</td>
+            <td style="padding:6px 8px; font-weight:700; color:${(run.profit || 0) >= 0 ? "#16a34a" : "#dc2626"};">$${(run.profit || 0).toLocaleString()}</td>
             <td style="padding:6px 8px; color:#64748b;">${new Date(run.date).toLocaleDateString()} ${new Date(run.date).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</td>
           </tr>`,
         )
@@ -2412,11 +2353,11 @@ export default function KeyTracker() {
           <div style="display:grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap:12px; margin-bottom:14px;">
             <div style="border:1px solid #e5e7eb; border-radius:8px; padding:12px;">
               <div style="font-size:12px; color:#64748b;">Investment</div>
-              <div style="font-size:20px; font-weight:800;">$${infoKey.cost.toLocaleString()}</div>
+              <div style="font-size:20px; font-weight:800;">$${(infoKey.cost || 0).toLocaleString()}</div>
             </div>
             <div style="border:1px solid #e5e7eb; border-radius:8px; padding:12px;">
               <div style="font-size:12px; color:#64748b;">Total Profit</div>
-              <div style="font-size:20px; font-weight:800; color:#16a34a;">$${infoKey.totalProfit.toLocaleString()}</div>
+              <div style="font-size:20px; font-weight:800; color:#16a34a;">$${(infoKey.totalProfit || 0).toLocaleString()}</div>
             </div>
             <div style="border:1px solid #e5e7eb; border-radius:8px; padding:12px;">
               <div style="font-size:12px; color:#64748b;">ROI</div>
@@ -2487,14 +2428,14 @@ export default function KeyTracker() {
       <div className="flex flex-1">
         {/* Sidebar */}
         <div
-          className={`fixed inset-y-0 left-0 z-50 w-64 bg-background border-r transform transition-transform duration-200 ease-in-out lg:translate-x-0 lg:static lg:inset-0 ${
+          className={`fixed inset-y-0 left-0 z-50 w-64 border-r transform transition-transform duration-200 ease-in-out lg:translate-x-0 lg:static lg:inset-0 bg-sidebar ${
             sidebarOpen ? "translate-x-0" : "-translate-x-full"
           }`}
         >
           <div className="flex items-center justify-between p-6 border-b">
             <div className="flex items-center space-x-2">
               <div className="p-2 bg-primary rounded-lg">
-                <Key className="h-5 w-5 text-primary-foreground" />
+                <KeyRound className="h-5 w-5 text-primary-foreground" />
               </div>
               <div>
                 <h1 className="font-bold text-foreground">Shrimple Tracker</h1>
@@ -2583,27 +2524,7 @@ export default function KeyTracker() {
         {/* Main Content */}
         <div className="flex-1 lg:ml-0">
           {/* Header */}
-          <header className="bg-background border-b p-4 lg:p-6">
-            <div className="flex items-center justify-between">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="lg:hidden text-foreground"
-                onClick={() => setSidebarOpen(true)}
-              >
-                <Menu className="h-4 w-4" />
-              </Button>
-              <div className="flex items-center space-x-4">
-                <span className="text-sm text-muted-foreground">
-                  {mainTab === "keys"
-                    ? `${keys.length} keys • ${totalRuns} runs • $${totalProfit.toLocaleString()} profit`
-                    : `${armors.length} armors • ${
-                        armors.filter((a) => a.currentDurability / getMaxDurabilityForCondition(a) < 0.3).length
-                      } critical • ${armors.reduce((sum, armor) => sum + armor.repairCost, 0).toLocaleString()} repair costs`}
-                </span>
-              </div>
-            </div>
-          </header>
+          
 
           {/* Content */}
           <main className="p-4 lg:p-6">{renderMainContent()}</main>
@@ -2611,30 +2532,8 @@ export default function KeyTracker() {
       </div>
 
       {/* Footer */}
-      <footer className="bg-background border-t mt-auto">
-        <div className="max-w-7xl mx-auto px-4 py-6">
-          <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-            <div className="flex items-center space-x-2">
-              <div className="p-1 bg-primary rounded">
-                <Key className="h-3 w-3 text-primary-foreground" />
-              </div>
-              <span className="text-sm font-medium">Shrimple Arena Tracker</span>
-            </div>
-            <div className="flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-6 text-xs text-muted-foreground">
-              <span>© 2024 Shrimple Tracker. All rights reserved.</span>
-              <div className="flex space-x-4">
-                <button className="hover:text-foreground transition-colors">Privacy Policy</button>
-                <button className="hover:text-foreground transition-colors">Cookie Policy</button>
-                <button className="hover:text-foreground transition-colors">Terms of Service</button>
-              </div>
-            </div>
-          </div>
-          <div className="mt-4 pt-4 border-t text-center">
-            <p className="text-xs text-muted-foreground">
-              Built with ❤️ for Arena Breakout players • Track your Keys & Gear, maximize your profits
-            </p>
-          </div>
-        </div>
+      <footer className="bg-background/50 border-t backdrop-blur-sm mt-auto">
+        
       </footer>
 
       {/* Overlay for mobile */}
@@ -2658,9 +2557,11 @@ export default function KeyTracker() {
               <div className="bg-muted/50 p-3 rounded-lg space-y-3">
                 <div>
                   <h4 className="font-medium">{repairingArmor.name}</h4>
-                  <div className="text-sm text-muted-foreground">Class {repairingArmor.armorClass} {repairingArmor.condition}</div>
+                  <div className="text-sm text-muted-foreground">
+                    Class {repairingArmor.armorClass} {repairingArmor.condition}
+                  </div>
                 </div>
-                
+
                 {/* Durability Thresholds */}
                 <div className="grid grid-cols-3 gap-2 text-sm">
                   <div className="text-center p-2 bg-background/50 rounded-lg">
@@ -2678,7 +2579,8 @@ export default function KeyTracker() {
                 </div>
 
                 <div className="text-xs text-muted-foreground mt-2">
-                  <span className="font-medium">Tip:</span> Consider repairing when durability falls below {repairingArmor.wornDurability} points
+                  <span className="font-medium">Tip:</span> Consider repairing when durability falls below{" "}
+                  {repairingArmor.wornDurability} points
                 </div>
               </div>
 
@@ -2701,12 +2603,10 @@ export default function KeyTracker() {
                 <div className="grid gap-2">
                   {REPAIR_NPCS.map((npc) => {
                     const armorWithDeductions = ensureRepairDeductions(repairingArmor)
-                    const deduction = armorWithDeductions.repairDeductions[npc.id as keyof typeof armorWithDeductions.repairDeductions]
-                    const afterRepair = Math.max(
-                      0,
-                      Number(newCurrentDurability) - deduction
-                    )
-                    
+                    const deduction =
+                      armorWithDeductions.repairDeductions[npc.id as keyof typeof armorWithDeductions.repairDeductions]
+                    const afterRepair = Math.max(0, Number(newCurrentDurability) - deduction)
+
                     // Determine repair quality based on thresholds
                     let recommendationText = ""
                     if (Number(newCurrentDurability) > 0) {
@@ -2718,14 +2618,14 @@ export default function KeyTracker() {
                         recommendationText = "Not recommended"
                       }
                     }
-                    
+
                     return (
-                      <div 
-                        key={npc.id} 
+                      <div
+                        key={npc.id}
                         className={cn(
                           "flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors",
                           selectedRepairNPC === npc.id ? "bg-primary/10 border-primary" : "hover:bg-muted/50",
-                          "border"
+                          "border",
                         )}
                         onClick={() => setSelectedRepairNPC(npc.id as "low" | "medium" | "high")}
                       >
@@ -2736,17 +2636,11 @@ export default function KeyTracker() {
                         <div className="text-right">
                           {Number(newCurrentDurability) > 0 ? (
                             <div>
-                              <div className={`font-medium ${npc.color}`}>
-                                {Math.round(afterRepair * 10) / 10}
-                              </div>
-                              <div className="text-xs text-muted-foreground">
-                                {recommendationText}
-                              </div>
+                              <div className={`font-medium ${npc.color}`}>{Math.round(afterRepair * 10) / 10}</div>
+                              <div className="text-xs text-muted-foreground">{recommendationText}</div>
                             </div>
                           ) : (
-                            <div className={`text-sm ${npc.color}`}>
-                              -{deduction}
-                            </div>
+                            <div className={`text-sm ${npc.color}`}>-{deduction}</div>
                           )}
                         </div>
                       </div>
@@ -2754,11 +2648,8 @@ export default function KeyTracker() {
                   })}
                 </div>
               </div>
-
-
             </div>
           )}
-
         </DialogContent>
       </Dialog>
 
@@ -2909,15 +2800,6 @@ export default function KeyTracker() {
                   }}
                 />
               </div>
-              <div className="grid gap-2">
-                <Label htmlFor="edit-maxUses">Max Uses</Label>
-                <Input
-                  id="edit-maxUses"
-                  type="number"
-                  value={editingKey.maxUses}
-                  onChange={(e) => setEditingKey({ ...editingKey, maxUses: Number(e.target.value) })}
-                />
-              </div>
             </div>
           )}
           <DialogFooter>
@@ -2962,10 +2844,8 @@ export default function KeyTracker() {
                   <span className="font-medium">{selectedKey?.location}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Uses remaining:</span>
-                  <span className="font-medium">
-                    {selectedKey?.currentUses}/{selectedKey?.maxUses}
-                  </span>
+                  <span>Key Uses:</span>
+                  <span className="font-medium">{selectedKey?.currentUses}</span>
                 </div>
               </div>
             </div>
@@ -3022,13 +2902,15 @@ export default function KeyTracker() {
                   <Card>
                     <CardContent className="p-4">
                       <div className="text-sm text-muted-foreground">Total Investment</div>
-                      <div className="text-2xl font-bold">${infoKey.cost.toLocaleString()}</div>
+                      <div className="text-2xl font-bold">${(infoKey.cost || 0).toLocaleString()}</div>
                     </CardContent>
                   </Card>
                   <Card>
                     <CardContent className="p-4">
                       <div className="text-sm text-muted-foreground">Total Profit</div>
-                      <div className="text-2xl font-bold text-green-600">${infoKey.totalProfit.toLocaleString()}</div>
+                      <div className="text-2xl font-bold text-green-600">
+                        ${(infoKey.totalProfit || 0).toLocaleString()}
+                      </div>
                     </CardContent>
                   </Card>
                   <Card>
@@ -3045,7 +2927,7 @@ export default function KeyTracker() {
                     <CardContent className="p-4">
                       <div className="text-sm text-muted-foreground">Average per Run</div>
                       <div className="text-2xl font-bold text-blue-600">
-                        ${getAverageProfit(infoKey).toLocaleString()}
+                        ${(getAverageProfit(infoKey) || 0).toLocaleString()}
                       </div>
                     </CardContent>
                   </Card>
@@ -3073,7 +2955,7 @@ export default function KeyTracker() {
                           {infoKey.runs.map((run) => (
                             <TableRow key={run.runNumber}>
                               <TableCell>#{run.runNumber}</TableCell>
-                              <TableCell className="text-green-600">${run.profit.toLocaleString()}</TableCell>
+                              <TableCell className="text-green-600">${(run.profit || 0).toLocaleString()}</TableCell>
                               <TableCell className="text-muted-foreground">{formatDate(run.date)}</TableCell>
                               <TableCell>
                                 <DropdownMenu>
