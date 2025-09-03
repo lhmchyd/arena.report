@@ -1156,7 +1156,7 @@ export default function KeyTracker() {
                           />
                         }
                       />
-                      <Area
+                      <AreaChart
                         dataKey="cumulative"
                         type="natural"
                         fill="url(#fillCumulative)"
