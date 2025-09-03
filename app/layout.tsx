@@ -5,6 +5,8 @@ import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 
 export const metadata: Metadata = {
+  title: 'Shrimple Arena',
+  description: 'Built With 💖',
   generator: 'v0.app',
 }
 
