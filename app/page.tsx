@@ -1156,12 +1156,11 @@ export default function KeyTracker() {
                           />
                         }
                       />
-                      <AreaChart
+                      <Area
                         dataKey="cumulative"
                         type="natural"
                         fill="url(#fillCumulative)"
                         stroke="var(--color-cumulative)"
-                        stackId="a"
                       />
                     </AreaChart>
                   </ChartContainer>
