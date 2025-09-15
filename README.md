@@ -83,7 +83,7 @@ arena.report is a client-side application designed to help players of Arena Brea
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/your-username/arena.report.git
+   git clone https://github.com/lhmchyd/arena.report.git
    ```
 
 2. Navigate to the project directory:
