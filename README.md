@@ -2,7 +2,7 @@
 
 A comprehensive tracking application for Arena Breakout Infinite, built with Next.js, TypeScript, and Tailwind CSS.
 
-![Arena Breakout Tracker Dashboard](public/dashboard-preview.png)
+![Arena Breakout Tracker Dashboard](public/dashboard-preview.jpg)
 
 ## Overview
 
