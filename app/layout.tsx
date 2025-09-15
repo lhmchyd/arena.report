@@ -3,9 +3,11 @@ import { GeistSans } from 'geist/font/sans'
 import { GeistMono } from 'geist/font/mono'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
+import { ThemeProvider } from '@/components/theme-provider'
+import { Toaster } from 'sonner'
 
 export const metadata: Metadata = {
-  title: 'Shrimple Arena',
+  title: 'arena.report',
   description: 'Built With 💖',
   generator: 'v0.app',
 }
@@ -16,7 +18,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <style>{`
 html {
@@ -27,8 +29,16 @@ html {
         `}</style>
       </head>
       <body>
-        {children}
-        <Analytics />
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark"
+          enableSystem
+          disableTransitionOnChange
+        >
+          {children}
+          <Toaster />
+          <Analytics />
+        </ThemeProvider>
       </body>
     </html>
   )

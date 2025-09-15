@@ -1,6 +1,6 @@
 {
-  "name": "my-v0-project",
-  "version": "0.1.0",
+  "name": "arena.report",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "build": "next build",
@@ -45,7 +45,7 @@
     "date-fns": "4.1.0",
     "embla-carousel-react": "8.5.1",
     "geist": "^1.3.1",
-    "html2canvas": "latest",
+    "html2canvas": "^1.4.1",
     "input-otp": "1.4.1",
     "lucide-react": "^0.454.0",
     "next": "15.2.4",
