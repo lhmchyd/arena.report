@@ -29,6 +29,7 @@ import {
   Diamond,
   Flame,
   Rocket,
+  List,
   Computer,
 } from "lucide-react";
 import { MobileRestriction } from "@/components/mobile-restriction";
@@ -157,7 +158,7 @@ const mainTabs = [
 
 const keySidebarItems = [
   { id: "overview", label: "Overview", icon: Home },
-  { id: "list", label: "List", icon: KeyRound }, // Changed from "Key Management" to "List"
+  { id: "list", label: "List", icon: List }, // Changed from KeyRound to List
   // Removed support from key sidebar
   // Removed analytics
 ];
@@ -185,6 +186,7 @@ const getIconComponent = (iconName: string) => {
     Diamond: () => <Diamond className="h-4 w-4" />,
     Flame: () => <Flame className="h-4 w-4" />,
     Rocket: () => <Rocket className="h-4 w-4" />,
+    List: () => <List className="h-4 w-4" />,
   };
 
   const IconComponent =
@@ -344,7 +346,7 @@ export default function MainTracker() {
       case "overview":
         return <Dashboard keys={keys} />;
       case "list":
-        return <KeyTracker keys={keys} setKeys={setKeys} />;
+        return <KeyTracker keys={keys} setKeysAction={setKeys} />;
       case "analytics":
         return <Analytics keys={keys} />;
       case "settings":
@@ -458,7 +460,7 @@ export default function MainTracker() {
                 {/* Sub Navigation - Key Tracker */}
                 {mainTab === "keys" && (
                   <SidebarGroup>
-                    <SidebarGroupLabel>KEY TRACKER</SidebarGroupLabel>
+                    <SidebarGroupLabel>KEY</SidebarGroupLabel>
                     <SidebarGroupContent>
                       <SidebarMenu>
                         {keySidebarItems.map((item) => (

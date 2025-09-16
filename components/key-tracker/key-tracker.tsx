@@ -61,9 +61,14 @@ interface KeyData {
   runs: Array<{ runNumber: number; profit: number; date: string }>
 }
 
+interface RunSortConfig {
+  key: 'runNumber' | 'profit';
+  direction: 'ascending' | 'descending';
+}
+
 const LOCATIONS = ["Farm", "Armory", "TV Station", "Northridge"]
 
-export default function KeyTracker({ keys, setKeys }: { keys: KeyData[], setKeys: (keys: KeyData[]) => void }) {
+export default function KeyTracker({ keys, setKeysAction }: { keys: KeyData[], setKeysAction: (keys: KeyData[]) => void }) {
   const [isRunDialogOpen, setIsRunDialogOpen] = useState(false)
   const [isInfoDialogOpen, setIsInfoDialogOpen] = useState(false)
   const [selectedKey, setSelectedKey] = useState<KeyData | null>(null)
@@ -87,6 +92,12 @@ export default function KeyTracker({ keys, setKeys }: { keys: KeyData[], setKeys
   // State for run deletion confirmation dialog
   const [isRunDeleteDialogOpen, setIsRunDeleteDialogOpen] = useState(false)
   const [runToDelete, setRunToDelete] = useState<{ keyId: string; runNumber: number; profit: number } | null>(null)
+
+  // State for run sorting
+  const [runSortConfig, setRunSortConfig] = useState<{ key: 'runNumber' | 'profit'; direction: 'ascending' | 'descending' }>({ 
+    key: 'runNumber', 
+    direction: 'descending' 
+  });
 
   const [isEditRunDialogOpen, setIsEditRunDialogOpen] = useState(false)
   const [validationErrors, setValidationErrors] = useState({
@@ -128,13 +139,16 @@ export default function KeyTracker({ keys, setKeys }: { keys: KeyData[], setKeys
   const submitRun = () => {
     if (!selectedKey) return
 
+    // Get the next run number based on existing runs
+    const nextRunNumber = selectedKey.runs.length + 1
+
     const newRun = {
-      runNumber: selectedKey.totalRuns + 1,
+      runNumber: nextRunNumber,
       profit: runProfit,
       date: new Date().toISOString(),
     }
 
-    setKeys(
+    setKeysAction(
       keys.map((key) => {
         if (key.id === selectedKey.id) {
           return {
@@ -192,7 +206,7 @@ export default function KeyTracker({ keys, setKeys }: { keys: KeyData[], setKeys
       runs: [],
     }
 
-    setKeys([...keys, key])
+    setKeysAction([...keys, key])
     setNewKey({ name: "", location: "", cost: 0 })
     setValidationErrors({ name: "", location: "", cost: "" })
     setIsAddDialogOpen(false)
@@ -200,13 +214,13 @@ export default function KeyTracker({ keys, setKeys }: { keys: KeyData[], setKeys
 
   const editKey = () => {
     if (!editingKey) return
-    setKeys(keys.map((key) => (key.id === editingKey.id ? editingKey : key)))
+    setKeysAction(keys.map((key) => (key.id === editingKey.id ? editingKey : key)))
     setIsEditDialogOpen(false)
     setEditingKey(null)
   }
 
   const deleteKey = (keyId: string) => {
-    setKeys(keys.filter((key) => key.id !== keyId))
+    setKeysAction(keys.filter((key) => key.id !== keyId))
   }
 
   const openDeleteDialog = (key: KeyData) => {
@@ -230,31 +244,41 @@ export default function KeyTracker({ keys, setKeys }: { keys: KeyData[], setKeys
   const confirmDeleteRun = () => {
     if (runToDelete) {
       // Implement delete run functionality
-      setKeys(prevKeys => 
-        prevKeys.map(key => {
-          if (key.id === runToDelete.keyId) {
-            const updatedRuns = key.runs.filter(runItem => 
-              runItem.runNumber !== runToDelete.runNumber
-            )
-            const newTotalProfit = updatedRuns.reduce((sum, runItem) => sum + (runItem.profit || 0), 0)
-            const newTotalRuns = updatedRuns.length
-            return { 
-              ...key, 
-              runs: updatedRuns, 
-              totalProfit: newTotalProfit,
-              totalRuns: newTotalRuns
-            }
+      const updatedKeys = keys.map((key: KeyData) => {
+        if (key.id === runToDelete.keyId) {
+          // Filter out the deleted run
+          const updatedRuns = key.runs.filter((runItem: { runNumber: number; profit: number; date: string }) => 
+            runItem.runNumber !== runToDelete.runNumber
+          )
+          
+          // Renumber the remaining runs sequentially
+          const renumberedRuns = updatedRuns
+            .sort((a, b) => a.runNumber - b.runNumber) // Sort by run number
+            .map((run, index) => ({
+              ...run,
+              runNumber: index + 1 // Renumber starting from 1
+            }))
+          
+          const newTotalProfit = renumberedRuns.reduce((sum: number, runItem: { runNumber: number; profit: number; date: string }) => sum + (runItem.profit || 0), 0)
+          const newTotalRuns = renumberedRuns.length
+          return { 
+            ...key, 
+            runs: renumberedRuns, 
+            totalProfit: newTotalProfit,
+            totalRuns: newTotalRuns,
+            currentUses: newTotalRuns  // Update currentUses to match actual runs
           }
-          return key
-        })
-      )
+        }
+        return key
+      })
+      setKeysAction(updatedKeys)
       setIsRunDeleteDialogOpen(false)
       setRunToDelete(null)
     }
   }
 
   const resetKeyUses = (keyId: string) => {
-    setKeys(keys.map((key) => (key.id === keyId ? { ...key, currentUses: 0 } : key)))
+    setKeysAction(keys.map((key) => (key.id === keyId ? { ...key, currentUses: 0 } : key)))
   }
 
   const getAverageProfit = (key: KeyData) => {
@@ -271,6 +295,32 @@ export default function KeyTracker({ keys, setKeys }: { keys: KeyData[], setKeys
     setValidationErrors({ name: "", location: "", cost: "" })
     setIsAddDialogOpen(true)
   }
+
+  // Function to handle sorting
+  const handleSort = (key: 'runNumber' | 'profit') => {
+    let direction: 'ascending' | 'descending' = 'ascending';
+    if (runSortConfig.key === key && runSortConfig.direction === 'ascending') {
+      direction = 'descending';
+    }
+    setRunSortConfig({ key, direction });
+  };
+
+  // Function to sort runs based on current sort config
+  const getSortedRuns = (runs: KeyData['runs']) => {
+    const sortedRuns = [...runs];
+    sortedRuns.sort((a, b) => {
+      if (runSortConfig.key === 'runNumber') {
+        return runSortConfig.direction === 'ascending' 
+          ? a.runNumber - b.runNumber 
+          : b.runNumber - a.runNumber;
+      } else { // profit
+        return runSortConfig.direction === 'ascending' 
+          ? (a.profit || 0) - (b.profit || 0) 
+          : (b.profit || 0) - (a.profit || 0);
+      }
+    });
+    return sortedRuns;
+  };
 
   const takeScreenshot = async () => {
     if (runHistoryRef.current) {
@@ -641,20 +691,40 @@ export default function KeyTracker({ keys, setKeys }: { keys: KeyData[], setKeys
               <Card>
                 <CardHeader>
                   <CardTitle>Run History - {infoKey?.totalRuns || 0} Runs</CardTitle>
-                  <CardDescription>All recorded runs for this key</CardDescription>
+                  <CardDescription>All recorded runs for this <span className="font-bold">{infoKey?.name || "key"}</span> Key</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Run #</TableHead>
-                        <TableHead>Profit</TableHead>
+                        <TableHead 
+                          className="cursor-pointer hover:bg-muted/50"
+                          onClick={() => handleSort('runNumber')}
+                        >
+                          <div className="flex items-center">
+                            Run
+                            {runSortConfig.key === 'runNumber' && (
+                              runSortConfig.direction === 'ascending' ? ' ↑' : ' ↓'
+                            )}
+                          </div>
+                        </TableHead>
+                        <TableHead 
+                          className="cursor-pointer hover:bg-muted/50"
+                          onClick={() => handleSort('profit')}
+                        >
+                          <div className="flex items-center">
+                            Profit
+                            {runSortConfig.key === 'profit' && (
+                              runSortConfig.direction === 'ascending' ? ' ↑' : ' ↓'
+                            )}
+                          </div>
+                        </TableHead>
                         <TableHead>Date</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {[...infoKey.runs].reverse().map((run) => (
+                      {infoKey && getSortedRuns(infoKey.runs).map((run) => (
                         <TableRow key={run.runNumber}>
                           <TableCell>#{run.runNumber}</TableCell>
                           <TableCell className={(run.profit || 0) >= 0 ? "text-green-600" : "text-red-600"}>
@@ -797,20 +867,19 @@ export default function KeyTracker({ keys, setKeys }: { keys: KeyData[], setKeys
               onClick={() => {
                 if (editingRun) {
                   // Update the keys
-                  setKeys(prevKeys => 
-                    prevKeys.map(key => {
-                      if (key.id === editingRun.keyId) {
-                        const updatedRuns = key.runs.map(run => 
-                          run.runNumber === editingRun.runNumber 
-                            ? { ...run, profit: editingRun.profit }
-                            : run
-                        )
-                        const newTotalProfit = updatedRuns.reduce((sum, run) => sum + (run.profit || 0), 0)
-                        return { ...key, runs: updatedRuns, totalProfit: newTotalProfit }
-                      }
-                      return key
-                    })
-                  )
+                  const updatedKeys = keys.map((key: KeyData) => {
+                    if (key.id === editingRun.keyId) {
+                      const updatedRuns = key.runs.map((run: { runNumber: number; profit: number; date: string }) => 
+                        run.runNumber === editingRun.runNumber 
+                          ? { ...run, profit: editingRun.profit }
+                          : run
+                      )
+                      const newTotalProfit = updatedRuns.reduce((sum: number, run: { runNumber: number; profit: number; date: string }) => sum + (run.profit || 0), 0)
+                      return { ...key, runs: updatedRuns, totalProfit: newTotalProfit }
+                    }
+                    return key
+                  })
+                  setKeysAction(updatedKeys)
                   
                   setIsEditRunDialogOpen(false)
                   setEditingRun(null)

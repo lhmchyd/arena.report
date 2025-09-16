@@ -248,38 +248,6 @@ export default function ArmorManager({ armors, setArmors }: { armors: ArmorData[
     setIsRepairDialogOpen(true)
   }
 
-  const repairArmor = () => {
-    if (!repairingArmor || !selectedRepairNPC) return
-
-    const armorWithDeductions = ensureRepairDeductions(repairingArmor)
-    const deduction = armorWithDeductions.repairDeductions[selectedRepairNPC]
-    const maxDurability = getMaxDurabilityForCondition(repairingArmor)
-    const newDurability = Math.max(0, maxDurability - deduction)
-
-    setArmors(
-      armors.map((armor) =>
-        armor.id === repairingArmor.id
-          ? {
-              ...ensureRepairDeductions(armor),
-              currentDurability: newDurability,
-              repairHistory: [
-                ...armor.repairHistory,
-                {
-                  date: new Date().toISOString(),
-                  cost: 0,
-                  durabilityRestored: (armor.currentDurability || 0) - newDurability,
-                },
-              ],
-            }
-          : ensureRepairDeductions(armor),
-      ),
-    )
-
-    setIsRepairDialogOpen(false)
-    setRepairingArmor(null)
-    setSelectedRepairNPC("")
-  }
-
   // Export/Import functions
   const exportArmors = () => {
     const exportPayload = {
@@ -1207,11 +1175,7 @@ export default function ArmorManager({ armors, setArmors }: { armors: ArmorData[
                 </div>
               </div>
             )}
-            <DialogFooter>
-              <Button onClick={repairArmor} disabled={!selectedRepairNPC || !newCurrentDurability}>
-                Apply Repair
-              </Button>
-            </DialogFooter>
+            {/* DialogFooter removed - no Apply Repair button needed */}
           </DialogContent>
         </Dialog>
 

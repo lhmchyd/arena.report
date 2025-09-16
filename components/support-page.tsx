@@ -2,32 +2,77 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Separator } from "@/components/ui/separator"
 import { ArrowRight, Mail, Github, Twitter, Link, QrCode, Heart } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
+import { UpdateCarousel } from "@/components/update-carousel"
 
 export const SupportPage = () => {
   const [copiedUrl, setCopiedUrl] = useState(false)
 
   const copyUrlToClipboard = () => {
-    navigator.clipboard.writeText("https://arena.report.vercel.app")
+    navigator.clipboard.writeText("https://arenareport.vercel.app")
     setCopiedUrl(true)
     toast("URL copied to clipboard")
     setTimeout(() => setCopiedUrl(false), 2000)
   }
 
   return (
-    <div className="space-y-4">
-      {/* Large Background Card - Full width with constrained content */}
+    <div className="space-y-1.5">
+      {/* Update Carousel - Moved to the top */}
+      <UpdateCarousel 
+        updates={[
+          {
+            id: "1",
+            title: "Key Tracker Improvements",
+            date: "Latest Update",
+            description: "Comprehensive bug fixes and feature additions for the Key Tracker:",
+            features: [
+              "Bug Fixed on Key Tracker - Run History Duplicated entry when user try to remove one of the entry and then make new entry by pressing Run Button",
+              "Bug Fixed on Key Tracker - Run History key uses didn't get updated when user deleted the run on the entry",
+              "Bug Fixed on Key Tracker - Run History Number on run aren't updated when user deleted an entry which make them stuck on their current number instead of get updated immediately",
+              "Feature on Key Tracker - Add Sort on Run History for Run Number and Profit",
+              "Remove Button called Apply Repair on Repair Armor Calculator Dialog",
+              "Feature on Key Tracker - Run History Add Key Name on subtitle to be able tell which key are screenshooted without changing the layout",
+              "On Copy URL change from arena.report.vercel to arenareport.vercel.app",
+              "Remove Scrollbar Visual on Cookie, Privacy, Copyright but keep the scrollable feature, and also remove Close Button on bottom",
+              "Change KeyRound on sidebar to List icon"
+            ],
+            version: "1.1.0"
+          },
+          {
+            id: "2",
+            title: "Full Version Release",
+            date: "Initial Release",
+            description: "Initial full version release of the application:",
+            features: [
+              "Full Version Released With Some Bugs Obviously 🎊🎊"
+            ],
+            version: "1.0.0"
+          }
+        ]} 
+      />
+      
+      {/* Separator below carousel */}
       <div className="flex justify-center">
         <div className="w-full max-w-3xl">
-          <Card className="bg-background border border-input shadow-lg rounded-2xl overflow-hidden">
-            <div className="h-32 w-full bg-gradient-to-r from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 rounded-t-2xl flex items-center justify-center">
-              <Heart className="h-12 w-12 text-gray-400 dark:text-gray-600" />
-            </div>
-          </Card>
+          <Separator className="my-2" />
         </div>
       </div>
+      
+      {/* Content below separator - fits to screen height */}
+      <div className="flex-grow overflow-y-auto" style={{ maxHeight: 'calc(100vh - 300px)' }}>
+        {/* Large Background Card - Full width with constrained content */}
+        <div className="flex justify-center">
+          <div className="w-full max-w-3xl">
+            <Card className="bg-background border border-input shadow-lg rounded-2xl overflow-hidden">
+              <div className="h-24 w-full bg-gradient-to-r from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 rounded-t-2xl flex items-center justify-center">
+                <Heart className="h-8 w-8 text-gray-400 dark:text-gray-600" />
+              </div>
+            </Card>
+          </div>
+        </div>
       
       {/* Compact centered wrapper with capsule-like cards */}
       <div className="flex justify-center">
@@ -44,7 +89,7 @@ export const SupportPage = () => {
                     onClick={() => window.open("https://tako.id/woeham", "_blank")}
                   >
                     <div className="flex flex-col">
-                      <span className="text-sm font-bold text-foreground">Tako.id</span>
+                      <span className="text-sm font-bold text-foreground">Tako</span>
                       <span className="text-xs text-muted-foreground">via tako.id</span>
                     </div>
                   </Card>
@@ -192,13 +237,14 @@ export const SupportPage = () => {
       {/* Gratitude Message Container - Same width as cards, placed below donation */}
       <div className="flex justify-center">
         <div className="w-full max-w-3xl">
-          <div className="bg-background border border-input rounded-2xl p-4 text-center">
+          <div className="bg-background border border-input rounded-2xl p-2 text-center">
             <p className="text-foreground text-sm">
               Your support means the world to me. All funds will be used to improve and maintain this website, 
               ensuring it remains a valuable resource for the Arena Breakout community.
             </p>
           </div>
         </div>
+      </div>
       </div>
     </div>
   )

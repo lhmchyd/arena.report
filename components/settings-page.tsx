@@ -88,7 +88,7 @@ export const SettingsPage = ({ onClearData }: { onClearData: () => void }) => {
 
       {/* Cookie Policy Dialog */}
       <Dialog open={cookieDialogOpen} onOpenChange={setCookieDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto scrollbar-hidden">
           <DialogHeader>
             <DialogTitle>Cookie Policy</DialogTitle>
           </DialogHeader>
@@ -160,15 +160,12 @@ export const SettingsPage = ({ onClearData }: { onClearData: () => void }) => {
               </p>
             </div>
           </div>
-          <DialogFooter>
-            <Button onClick={() => setCookieDialogOpen(false)}>Close</Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Privacy Policy Dialog */}
       <Dialog open={privacyDialogOpen} onOpenChange={setPrivacyDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto scrollbar-hidden">
           <DialogHeader>
             <DialogTitle>Privacy Policy</DialogTitle>
           </DialogHeader>
@@ -283,15 +280,12 @@ export const SettingsPage = ({ onClearData }: { onClearData: () => void }) => {
               </p>
             </div>
           </div>
-          <DialogFooter>
-            <Button onClick={() => setPrivacyDialogOpen(false)}>Close</Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Copyright Dialog */}
       <Dialog open={copyrightDialogOpen} onOpenChange={setCopyrightDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto scrollbar-hidden">
           <DialogHeader>
             <DialogTitle>Copyright Information</DialogTitle>
           </DialogHeader>
@@ -378,9 +372,6 @@ export const SettingsPage = ({ onClearData }: { onClearData: () => void }) => {
               </p>
             </div>
           </div>
-          <DialogFooter>
-            <Button onClick={() => setCopyrightDialogOpen(false)}>Close</Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
       
