@@ -76,6 +76,7 @@ import {
 } from "@/components/ui/tooltip";
 import { SettingsPage } from "@/components/settings-page"
 import { SupportPage } from "@/components/support-page";
+import { ArenaBreakoutDB } from "@/lib/indexeddb";
 
 const PROFILE_ICONS = [
   "User",
@@ -218,86 +219,182 @@ export default function MainTracker() {
     setMounted(true);
   }, []);
 
-  // Load profiles and current profile from localStorage
+  // Load profiles and current profile from IndexedDB
   useEffect(() => {
-    const savedProfiles = localStorage.getItem("arena-breakout-profiles");
-    const savedCurrentProfileId = localStorage.getItem(
-      "arena-breakout-current-profile",
-    );
+    const loadFromIndexedDB = async () => {
+      try {
+        const db = ArenaBreakoutDB.getInstance();
+        await db.init();
+        
+        const savedProfiles = await db.getProfiles();
+        const savedCurrentProfileId = await db.getCurrentProfileId();
 
-    if (savedProfiles) {
-      const parsedProfiles = JSON.parse(savedProfiles);
-      setProfiles(parsedProfiles);
+        if (savedProfiles.length > 0) {
+          setProfiles(savedProfiles);
 
-      if (
-        savedCurrentProfileId &&
-        parsedProfiles.find((p: Profile) => p.id === savedCurrentProfileId)
-      ) {
-        setCurrentProfileId(savedCurrentProfileId);
-        const currentProfile = parsedProfiles.find(
-          (p: Profile) => p.id === savedCurrentProfileId,
-        );
-        if (currentProfile) {
-          setKeys(currentProfile.keys || []);
-          setArmors(currentProfile.armors || []);
+          if (
+            savedCurrentProfileId &&
+            savedProfiles.find((p: Profile) => p.id === savedCurrentProfileId)
+          ) {
+            setCurrentProfileId(savedCurrentProfileId);
+            const currentProfile = savedProfiles.find(
+              (p: Profile) => p.id === savedCurrentProfileId,
+            );
+            if (currentProfile) {
+              setKeys(currentProfile.keys || []);
+              setArmors(currentProfile.armors || []);
+            }
+          } else if (savedProfiles.length > 0) {
+            setCurrentProfileId(savedProfiles[0].id);
+            setKeys(savedProfiles[0].keys || []);
+            setArmors(savedProfiles[0].armors || []);
+          }
+        } else {
+          // Create default profile
+          const defaultProfile: Profile = {
+            id: "default",
+            name: "Default Profile",
+            icon: "User",
+            createdAt: new Date().toISOString(),
+            keys: [],
+            armors: [
+              {
+                id: "1",
+                name: "926 Composite Body Armor",
+                armorClass: 5,
+                protectedAreas: ["Chest"],
+                material: "Composite",
+                movementSpeed: "-4%",
+                ergonomics: "-3",
+                weight: "6.20kg",
+                newDurability: 70,
+                likeNewDurability: 60,
+                wornDurability: 49,
+                currentDurability: 70,
+                condition: "Body Armor",
+                repairCost: 0,
+                purchaseDate: new Date().toISOString(),
+                repairHistory: [],
+                repairDeductions: {
+                  low: 8.1,
+                  medium: 6.1,
+                  high: 4.5,
+                },
+              },
+            ],
+          };
+          setProfiles([defaultProfile]);
+          setCurrentProfileId(defaultProfile.id);
+          setKeys(defaultProfile.keys);
+          setArmors(defaultProfile.armors);
         }
-      } else if (parsedProfiles.length > 0) {
-        setCurrentProfileId(parsedProfiles[0].id);
-        setKeys(parsedProfiles[0].keys || []);
-        setArmors(parsedProfiles[0].armors || []);
+      } catch (error) {
+        console.error("Failed to load data from IndexedDB:", error);
+        // Fallback to localStorage if IndexedDB fails
+        const savedProfiles = localStorage.getItem("arena-breakout-profiles");
+        const savedCurrentProfileId = localStorage.getItem(
+          "arena-breakout-current-profile",
+        );
+
+        if (savedProfiles) {
+          const parsedProfiles = JSON.parse(savedProfiles);
+          setProfiles(parsedProfiles);
+
+          if (
+            savedCurrentProfileId &&
+            parsedProfiles.find((p: Profile) => p.id === savedCurrentProfileId)
+          ) {
+            setCurrentProfileId(savedCurrentProfileId);
+            const currentProfile = parsedProfiles.find(
+              (p: Profile) => p.id === savedCurrentProfileId,
+            );
+            if (currentProfile) {
+              setKeys(currentProfile.keys || []);
+              setArmors(currentProfile.armors || []);
+            }
+          } else if (parsedProfiles.length > 0) {
+            setCurrentProfileId(parsedProfiles[0].id);
+            setKeys(parsedProfiles[0].keys || []);
+            setArmors(parsedProfiles[0].armors || []);
+          }
+        } else {
+          // Create default profile
+          const defaultProfile: Profile = {
+            id: "default",
+            name: "Default Profile",
+            icon: "User",
+            createdAt: new Date().toISOString(),
+            keys: [],
+            armors: [
+              {
+                id: "1",
+                name: "926 Composite Body Armor",
+                armorClass: 5,
+                protectedAreas: ["Chest"],
+                material: "Composite",
+                movementSpeed: "-4%",
+                ergonomics: "-3",
+                weight: "6.20kg",
+                newDurability: 70,
+                likeNewDurability: 60,
+                wornDurability: 49,
+                currentDurability: 70,
+                condition: "Body Armor",
+                repairCost: 0,
+                purchaseDate: new Date().toISOString(),
+                repairHistory: [],
+                repairDeductions: {
+                  low: 8.1,
+                  medium: 6.1,
+                  high: 4.5,
+                },
+              },
+            ],
+          };
+          setProfiles([defaultProfile]);
+          setCurrentProfileId(defaultProfile.id);
+          setKeys(defaultProfile.keys);
+          setArmors(defaultProfile.armors);
+        }
       }
-    } else {
-      // Create default profile
-      const defaultProfile: Profile = {
-        id: "default",
-        name: "Default Profile",
-        icon: "User",
-        createdAt: new Date().toISOString(),
-        keys: [],
-        armors: [
-          {
-            id: "1",
-            name: "926 Composite Body Armor",
-            armorClass: 5,
-            protectedAreas: ["Chest"],
-            material: "Composite",
-            movementSpeed: "-4%",
-            ergonomics: "-3",
-            weight: "6.20kg",
-            newDurability: 70,
-            likeNewDurability: 60,
-            wornDurability: 49,
-            currentDurability: 70,
-            condition: "Body Armor",
-            repairCost: 0,
-            purchaseDate: new Date().toISOString(),
-            repairHistory: [],
-            repairDeductions: {
-              low: 8.1,
-              medium: 6.1,
-              high: 4.5,
-            },
-          },
-        ],
-      };
-      setProfiles([defaultProfile]);
-      setCurrentProfileId(defaultProfile.id);
-      setKeys(defaultProfile.keys);
-      setArmors(defaultProfile.armors);
-    }
+    };
+
+    loadFromIndexedDB();
   }, []);
 
-  // Save profiles to localStorage whenever they change
+  // Save profiles to IndexedDB whenever they change
   useEffect(() => {
     if (profiles.length > 0) {
-      localStorage.setItem("arena-breakout-profiles", JSON.stringify(profiles));
+      const saveToIndexedDB = async () => {
+        try {
+          const db = ArenaBreakoutDB.getInstance();
+          await db.saveProfiles(profiles);
+        } catch (error) {
+          console.error("Failed to save profiles to IndexedDB:", error);
+          // Fallback to localStorage if IndexedDB fails
+          localStorage.setItem("arena-breakout-profiles", JSON.stringify(profiles));
+        }
+      };
+
+      saveToIndexedDB();
     }
   }, [profiles]);
 
-  // Save current profile ID
+  // Save current profile ID to IndexedDB
   useEffect(() => {
     if (currentProfileId) {
-      localStorage.setItem("arena-breakout-current-profile", currentProfileId);
+      const saveToIndexedDB = async () => {
+        try {
+          const db = ArenaBreakoutDB.getInstance();
+          await db.saveCurrentProfileId(currentProfileId);
+        } catch (error) {
+          console.error("Failed to save current profile ID to IndexedDB:", error);
+          // Fallback to localStorage if IndexedDB fails
+          localStorage.setItem("arena-breakout-current-profile", currentProfileId);
+        }
+      };
+
+      saveToIndexedDB();
     }
   }, [currentProfileId]);
 
@@ -352,10 +449,17 @@ export default function MainTracker() {
       case "settings":
         return (
           <SettingsPage
-            onClearData={() => {
-              // Clear all data
-              localStorage.removeItem("arena-breakout-profiles");
-              localStorage.removeItem("arena-breakout-current-profile");
+            onClearData={async () => {
+              try {
+                // Clear all data from IndexedDB
+                const db = ArenaBreakoutDB.getInstance();
+                await db.clearAllData();
+              } catch (error) {
+                console.error("Failed to clear data from IndexedDB:", error);
+                // Fallback to localStorage if IndexedDB fails
+                localStorage.removeItem("arena-breakout-profiles");
+                localStorage.removeItem("arena-breakout-current-profile");
+              }
 
               // Reset state to default
               const defaultProfile: Profile = {
@@ -395,6 +499,69 @@ export default function MainTracker() {
               setCurrentProfileId(defaultProfile.id);
               setKeys(defaultProfile.keys);
               setArmors(defaultProfile.armors);
+            }}
+            onExportData={async () => {
+              // Export all profiles data
+              const exportData = {
+                version: "1.0",
+                exportDate: new Date().toISOString(),
+                profiles: profiles,
+                currentProfileId: currentProfileId
+              };
+              
+              return JSON.stringify(exportData, null, 2);
+            }}
+            onImportData={async (data: string) => {
+              try {
+                const parsed = JSON.parse(data);
+                
+                // Validate the structure
+                if (!parsed.profiles || !Array.isArray(parsed.profiles)) {
+                  throw new Error("Invalid data format. Missing or invalid profiles array.");
+                }
+                
+                // Validate each profile
+                for (const profile of parsed.profiles) {
+                  if (!profile.id || !profile.name) {
+                    throw new Error("Invalid profile data structure. Missing required fields.");
+                  }
+                }
+                
+                // Save to IndexedDB
+                try {
+                  const db = ArenaBreakoutDB.getInstance();
+                  await db.saveProfiles(parsed.profiles);
+                  if (parsed.currentProfileId) {
+                    await db.saveCurrentProfileId(parsed.currentProfileId);
+                  }
+                } catch (error) {
+                  console.error("Failed to save to IndexedDB:", error);
+                  // Fallback to localStorage
+                  localStorage.setItem("arena-breakout-profiles", JSON.stringify(parsed.profiles));
+                  if (parsed.currentProfileId) {
+                    localStorage.setItem("arena-breakout-current-profile", parsed.currentProfileId);
+                  }
+                }
+                
+                // Update state
+                setProfiles(parsed.profiles);
+                
+                // Set current profile
+                if (parsed.currentProfileId && parsed.profiles.find((p: Profile) => p.id === parsed.currentProfileId)) {
+                  setCurrentProfileId(parsed.currentProfileId);
+                  const currentProfile = parsed.profiles.find((p: Profile) => p.id === parsed.currentProfileId);
+                  if (currentProfile) {
+                    setKeys(currentProfile.keys || []);
+                    setArmors(currentProfile.armors || []);
+                  }
+                } else if (parsed.profiles.length > 0) {
+                  setCurrentProfileId(parsed.profiles[0].id);
+                  setKeys(parsed.profiles[0].keys || []);
+                  setArmors(parsed.profiles[0].armors || []);
+                }
+              } catch (error) {
+                throw new Error(`Failed to import data: ${error instanceof Error ? error.message : 'Unknown error'}`);
+              }
             }}
           />
         );

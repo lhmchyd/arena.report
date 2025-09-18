@@ -69,7 +69,7 @@ arena.report is a client-side application designed to help players of Arena Brea
 - **UI Components**: [shadcn/ui](https://ui.shadcn.com/)
 - **Charts**: [Recharts](https://recharts.org/)
 - **State Management**: React Context API
-- **Storage**: Browser localStorage
+- **Storage**: Browser IndexedDB (with localStorage fallback)
 - **Deployment**: [Vercel](https://vercel.com/)
 
 ## Getting Started
@@ -191,7 +191,7 @@ Analytics dashboard featuring:
 
 ## Data Management
 
-All data is stored locally in the browser's localStorage:
+All data is stored locally in the browser's IndexedDB database (with localStorage fallback for older browsers):
 - Keys and run history
 - Armor collections and repair history
 - Profile information

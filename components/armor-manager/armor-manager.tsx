@@ -625,33 +625,105 @@ export default function ArmorManager({ armors, setArmors }: { armors: ArmorData[
 
                   {/* Repair Deductions Section */}
                   <div className="grid gap-2">
-                    <Label>Repair Deductions</Label>
-                    <div className="grid grid-cols-3 gap-4">
-                      {REPAIR_NPCS.map((npc) => (
-                        <div key={npc.id} className="grid gap-2">
-                          <Label htmlFor={`repair-${npc.id}`} className={`text-xs ${npc.color}`}>
-                            {npc.name} ({npc.id})
-                          </Label>
+                    <div className="flex items-center justify-between">
+                      <Label>Repair Deductions</Label>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => {
+                          // Toggle between simple and detailed view
+                          // Check if we're currently in simple mode (all values are the same and non-zero, or all are zero)
+                          const isSimpleMode = (newArmor.repairDeductions.low === newArmor.repairDeductions.medium && 
+                                               newArmor.repairDeductions.low === newArmor.repairDeductions.high);
+                          
+                          if (isSimpleMode && newArmor.repairDeductions.low !== 0) {
+                            // Switch to detailed view with default values
+                            setNewArmor({
+                              ...newArmor,
+                              repairDeductions: {
+                                low: 8.1,
+                                medium: 6.1,
+                                high: 4.5,
+                              }
+                            });
+                          } else {
+                            // Switch to simple view with current low value or default 0
+                            const currentValue = newArmor.repairDeductions.low || 0;
+                            setNewArmor({
+                              ...newArmor,
+                              repairDeductions: {
+                                low: currentValue,
+                                medium: currentValue,
+                                high: currentValue,
+                              }
+                            });
+                          }
+                        }}
+                      >
+                        {(newArmor.repairDeductions.low === newArmor.repairDeductions.medium && 
+                          newArmor.repairDeductions.low === newArmor.repairDeductions.high && 
+                          newArmor.repairDeductions.low !== 0) ? 
+                         'Show NPC Options' : 'Simple Deduction'}
+                      </Button>
+                    </div>
+                    
+                    {/* Simple Deduction View */}
+                    {(newArmor.repairDeductions.low === newArmor.repairDeductions.medium && 
+                      newArmor.repairDeductions.low === newArmor.repairDeductions.high && 
+                      newArmor.repairDeductions.low !== 0) ? (
+                      <div className="grid grid-cols-1 gap-4">
+                        <div className="grid gap-2">
+                          <Label htmlFor="simple-repair-deduction">Deduction Value</Label>
                           <Input
-                            id={`repair-${npc.id}`}
+                            id="simple-repair-deduction"
                             type="number"
                             step="0.1"
-                            value={newArmor.repairDeductions[npc.id as keyof typeof newArmor.repairDeductions]}
-                            onChange={(e) =>
+                            value={newArmor.repairDeductions.low}
+                            onChange={(e) => {
+                              const value = Number(e.target.value);
                               setNewArmor({
                                 ...newArmor,
                                 repairDeductions: {
-                                  ...newArmor.repairDeductions,
-                                  [npc.id]: Number(e.target.value),
-                                },
-                              })
-                            }
-                            placeholder={npc.defaultDeduction.toString()}
+                                  low: value,
+                                  medium: value,
+                                  high: value,
+                                }
+                              });
+                            }}
+                            placeholder="Enter deduction value"
                             className="text-right"
                           />
                         </div>
-                      ))}
-                    </div>
+                      </div>
+                    ) : (
+                      /* Detailed NPC View */
+                      <div className="grid grid-cols-3 gap-4">
+                        {REPAIR_NPCS.map((npc) => (
+                          <div key={npc.id} className="grid gap-2">
+                            <Label htmlFor={`repair-${npc.id}`} className={`text-xs ${npc.color}`}>
+                              {npc.name} ({npc.id})
+                            </Label>
+                            <Input
+                              id={`repair-${npc.id}`}
+                              type="number"
+                              step="0.1"
+                              value={newArmor.repairDeductions[npc.id as keyof typeof newArmor.repairDeductions]}
+                              onChange={(e) =>
+                                setNewArmor({
+                                  ...newArmor,
+                                  repairDeductions: {
+                                    ...newArmor.repairDeductions,
+                                    [npc.id]: Number(e.target.value),
+                                  },
+                                })
+                              }
+                              placeholder={npc.defaultDeduction.toString()}
+                              className="text-right"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
                 <DialogFooter>
@@ -867,33 +939,113 @@ export default function ArmorManager({ armors, setArmors }: { armors: ArmorData[
 
                     {/* Repair Deductions Section */}
                     <div className="grid gap-2">
-                      <Label>Repair Deductions</Label>
-                      <div className="grid grid-cols-3 gap-4">
-                        {REPAIR_NPCS.map((npc) => (
-                          <div key={npc.id} className="grid gap-2">
-                            <Label htmlFor={`edit-repair-${npc.id}`} className={`text-xs ${npc.color}`}>
-                              {npc.name} ({npc.id})
-                            </Label>
+                      <div className="flex items-center justify-between">
+                        <Label>Repair Deductions</Label>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => {
+                            if (!editingArmor) return;
+                            
+                            // Toggle between simple and detailed view
+                            // Check if we're currently in simple mode (all values are the same and non-zero, or all are zero)
+                            const isSimpleMode = (editingArmor.repairDeductions.low === editingArmor.repairDeductions.medium && 
+                                                 editingArmor.repairDeductions.low === editingArmor.repairDeductions.high);
+                            
+                            if (isSimpleMode && editingArmor.repairDeductions.low !== 0) {
+                              // Switch to detailed view with default values
+                              setEditingArmor({
+                                ...editingArmor,
+                                repairDeductions: {
+                                  low: 8.1,
+                                  medium: 6.1,
+                                  high: 4.5,
+                                }
+                              });
+                            } else {
+                              // Switch to simple view with current low value or default 0
+                              const currentValue = editingArmor.repairDeductions.low || 0;
+                              setEditingArmor({
+                                ...editingArmor,
+                                repairDeductions: {
+                                  low: currentValue,
+                                  medium: currentValue,
+                                  high: currentValue,
+                                }
+                              });
+                            }
+                          }}
+                        >
+                          {editingArmor && 
+                           (editingArmor.repairDeductions.low === editingArmor.repairDeductions.medium && 
+                            editingArmor.repairDeductions.low === editingArmor.repairDeductions.high && 
+                            editingArmor.repairDeductions.low !== 0) ? 
+                           'Show NPC Options' : 'Simple Deduction'}
+                        </Button>
+                      </div>
+                      
+                      {/* Simple Deduction View */}
+                      {editingArmor && 
+                       (editingArmor.repairDeductions.low === editingArmor.repairDeductions.medium && 
+                        editingArmor.repairDeductions.low === editingArmor.repairDeductions.high && 
+                        editingArmor.repairDeductions.low !== 0) ? (
+                        <div className="grid grid-cols-1 gap-4">
+                          <div className="grid gap-2">
+                            <Label htmlFor="edit-simple-repair-deduction">Deduction Value</Label>
                             <Input
-                              id={`edit-repair-${npc.id}`}
+                              id="edit-simple-repair-deduction"
                               type="number"
                               step="0.1"
-                              value={editingArmor.repairDeductions[npc.id as keyof typeof editingArmor.repairDeductions]}
-                              onChange={(e) =>
+                              value={editingArmor.repairDeductions.low}
+                              onChange={(e) => {
+                                if (!editingArmor) return;
+                                const value = Number(e.target.value);
                                 setEditingArmor({
                                   ...editingArmor,
                                   repairDeductions: {
-                                    ...editingArmor.repairDeductions,
-                                    [npc.id]: Number(e.target.value),
-                                  },
-                                })
-                              }
-                              placeholder={npc.defaultDeduction.toString()}
+                                    low: value,
+                                    medium: value,
+                                    high: value,
+                                  }
+                                });
+                              }}
+                              placeholder="Enter deduction value"
                               className="text-right"
                             />
                           </div>
-                        ))}
-                      </div>
+                        </div>
+                      ) : (
+                        /* Detailed NPC View */
+                        editingArmor && (
+                          <div className="grid grid-cols-3 gap-4">
+                            {REPAIR_NPCS.map((npc) => (
+                              <div key={npc.id} className="grid gap-2">
+                                <Label htmlFor={`edit-repair-${npc.id}`} className={`text-xs ${npc.color}`}>
+                                  {npc.name} ({npc.id})
+                                </Label>
+                                <Input
+                                  id={`edit-repair-${npc.id}`}
+                                  type="number"
+                                  step="0.1"
+                                  value={editingArmor.repairDeductions[npc.id as keyof typeof editingArmor.repairDeductions]}
+                                  onChange={(e) => {
+                                    if (!editingArmor) return;
+                                    setEditingArmor({
+                                      ...editingArmor,
+                                      repairDeductions: {
+                                        ...editingArmor.repairDeductions,
+                                        [npc.id]: Number(e.target.value),
+                                      },
+                                    });
+                                  }}
+                                  placeholder={npc.defaultDeduction.toString()}
+                                  className="text-right"
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        )
+                      )}
                     </div>
                   </div>
                 )}
@@ -1126,51 +1278,102 @@ export default function ArmorManager({ armors, setArmors }: { armors: ArmorData[
                 <div className="space-y-2">
                   <Label>Available Repair Options</Label>
                   <div className="grid gap-2">
-                    {REPAIR_NPCS.map((npc) => {
-                      const armorWithDeductions = ensureRepairDeductions(repairingArmor)
-                      const deduction =
-                        armorWithDeductions.repairDeductions[npc.id as keyof typeof armorWithDeductions.repairDeductions]
-                      const afterRepair = Math.max(0, Number(newCurrentDurability) - deduction)
-
-                      // Determine repair quality based on thresholds
-                      let recommendationText = ""
-                      if (Number(newCurrentDurability) > 0) {
-                        if (afterRepair >= repairingArmor.likeNewDurability) {
-                          recommendationText = "Excellent repair choice"
-                        } else if (afterRepair >= repairingArmor.wornDurability) {
-                          recommendationText = "Decent repair option"
-                        } else {
-                          recommendationText = "Not recommended"
+                    {repairingArmor && 
+                     repairingArmor.repairDeductions.low === repairingArmor.repairDeductions.medium && 
+                     repairingArmor.repairDeductions.low === repairingArmor.repairDeductions.high &&
+                     repairingArmor.repairDeductions.low !== 0 ? (
+                      // Simple deduction mode - show only one result
+                      (() => {
+                        const armorWithDeductions = ensureRepairDeductions(repairingArmor);
+                        const deduction = armorWithDeductions.repairDeductions.low;
+                        const afterRepair = Math.max(0, Number(newCurrentDurability) - deduction);
+                        
+                        // Determine repair quality based on thresholds
+                        let recommendationText = "";
+                        if (Number(newCurrentDurability) > 0) {
+                          if (afterRepair >= repairingArmor.likeNewDurability) {
+                            recommendationText = "Excellent repair choice";
+                          } else if (afterRepair >= repairingArmor.wornDurability) {
+                            recommendationText = "Decent repair option";
+                          } else {
+                            recommendationText = "Not recommended";
+                          }
                         }
-                      }
-
-                      return (
-                        <div
-                          key={npc.id}
-                          className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors border ${
-                            selectedRepairNPC === npc.id
-                              ? "bg-primary/10 border-primary"
-                              : "hover:bg-muted/50 border-border"
-                          }`}
-                          onClick={() => setSelectedRepairNPC(npc.id as "low" | "medium" | "high")}
-                        >
-                          <div>
-                            <span className={`font-medium ${npc.color}`}>{npc.name}</span>
-                            <div className="text-xs text-muted-foreground capitalize">({npc.id} quality)</div>
+                        
+                        return (
+                          <div
+                            className={`flex items-center justify-between p-3 rounded-lg border ${
+                              selectedRepairNPC === "low"
+                                ? "bg-primary/10 border-primary"
+                                : "hover:bg-muted/50 border-border"
+                            }`}
+                            onClick={() => setSelectedRepairNPC("low")}
+                          >
+                            <div>
+                              <span className="font-medium">Repair Deduction</span>
+                              <div className="text-xs text-muted-foreground">Simple Mode</div>
+                            </div>
+                            <div className="text-right">
+                              {Number(newCurrentDurability) > 0 ? (
+                                <div>
+                                  <div className="font-medium">{Math.round(afterRepair * 10) / 10}</div>
+                                  <div className="text-xs text-muted-foreground">{recommendationText}</div>
+                                </div>
+                              ) : (
+                                <div className="text-sm">-{deduction}</div>
+                              )}
+                            </div>
                           </div>
-                          <div className="text-right">
-                            {Number(newCurrentDurability) > 0 ? (
-                              <div>
-                                <div className={`font-medium ${npc.color}`}>{Math.round(afterRepair * 10) / 10}</div>
-                                <div className="text-xs text-muted-foreground">{recommendationText}</div>
-                              </div>
-                            ) : (
-                              <div className={`text-sm ${npc.color}`}>-{deduction}</div>
-                            )}
+                        );
+                      })()
+                    ) : (
+                      // Detailed mode - show all three NPCs
+                      REPAIR_NPCS.map((npc) => {
+                        const armorWithDeductions = ensureRepairDeductions(repairingArmor!);
+                        const deduction =
+                          armorWithDeductions.repairDeductions[npc.id as keyof typeof armorWithDeductions.repairDeductions];
+                        const afterRepair = Math.max(0, Number(newCurrentDurability) - deduction);
+                        
+                        // Determine repair quality based on thresholds
+                        let recommendationText = "";
+                        if (Number(newCurrentDurability) > 0) {
+                          if (afterRepair >= repairingArmor!.likeNewDurability) {
+                            recommendationText = "Excellent repair choice";
+                          } else if (afterRepair >= repairingArmor!.wornDurability) {
+                            recommendationText = "Decent repair option";
+                          } else {
+                            recommendationText = "Not recommended";
+                          }
+                        }
+                        
+                        return (
+                          <div
+                            key={npc.id}
+                            className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors border ${
+                              selectedRepairNPC === npc.id
+                                ? "bg-primary/10 border-primary"
+                                : "hover:bg-muted/50 border-border"
+                            }`}
+                            onClick={() => setSelectedRepairNPC(npc.id as "low" | "medium" | "high")}
+                          >
+                            <div>
+                              <span className={`font-medium ${npc.color}`}>{npc.name}</span>
+                              <div className="text-xs text-muted-foreground capitalize">({npc.id} quality)</div>
+                            </div>
+                            <div className="text-right">
+                              {Number(newCurrentDurability) > 0 ? (
+                                <div>
+                                  <div className={`font-medium ${npc.color}`}>{Math.round(afterRepair * 10) / 10}</div>
+                                  <div className="text-xs text-muted-foreground">{recommendationText}</div>
+                                </div>
+                              ) : (
+                                <div className={`text-sm ${npc.color}`}>-{deduction}</div>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      )
-                    })}
+                        );
+                      })
+                    )}
                   </div>
                 </div>
               </div>

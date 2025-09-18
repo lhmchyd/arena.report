@@ -24,9 +24,21 @@ export const SupportPage = () => {
       <UpdateCarousel 
         updates={[
           {
+            id: "0",
+            title: "New Features and Improvements",
+            date: "Latest Update",
+            description: "Exciting new features and improvements in this update:",
+            features: [
+              "Feature on LocalStorage, add Indexeddb as Primary Storage and LocalStorage as fallback",
+              "Feature on Settings add Import and Export for profile backups",
+              "Feature on Armor Segments add toggle between Simple and NPC Deduction for newly updated Arena Breakout on S3"
+            ],
+            version: "1.2.0"
+          },
+          {
             id: "1",
             title: "Key Tracker Improvements",
-            date: "Latest Update",
+            date: "Minor Update",
             description: "Comprehensive bug fixes and feature additions for the Key Tracker:",
             features: [
               "Bug Fixed on Key Tracker - Run History Duplicated entry when user try to remove one of the entry and then make new entry by pressing Run Button",

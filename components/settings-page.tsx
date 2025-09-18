@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -17,12 +17,84 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { Download, Upload, Trash2 } from "lucide-react"
 
-export const SettingsPage = ({ onClearData }: { onClearData: () => void }) => {
+export const SettingsPage = ({ 
+  onClearData,
+  onExportData,
+  onImportData
+}: { 
+  onClearData: () => void,
+  onExportData?: () => Promise<string>,
+  onImportData?: (data: string) => Promise<void>
+}) => {
   const [cookieDialogOpen, setCookieDialogOpen] = useState(false)
   const [privacyDialogOpen, setPrivacyDialogOpen] = useState(false)
   const [copyrightDialogOpen, setCopyrightDialogOpen] = useState(false)
   const [isClearDataDialogOpen, setIsClearDataDialogOpen] = useState(false)
+  const [isExportDialogOpen, setIsExportDialogOpen] = useState(false)
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false)
+  const [exportData, setExportData] = useState("")
+  const [importData, setImportData] = useState("")
+  const [importError, setImportError] = useState("")
+  const [isImporting, setIsImporting] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleExport = async () => {
+    if (onExportData) {
+      try {
+        const data = await onExportData()
+        setExportData(data)
+        setIsExportDialogOpen(true)
+      } catch (error) {
+        console.error("Export failed:", error)
+      }
+    }
+  }
+
+  const handleImport = async () => {
+    if (!importData.trim()) {
+      setImportError("Please paste data to import")
+      return
+    }
+
+    setIsImporting(true)
+    setImportError("")
+
+    try {
+      if (onImportData) {
+        await onImportData(importData)
+        setImportData("")
+        setIsImportDialogOpen(false)
+        // You might want to show a success message here
+      }
+    } catch (error) {
+      setImportError(`Import failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    } finally {
+      setIsImporting(false)
+    }
+  }
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const content = e.target?.result as string
+      if (content) {
+        setImportData(content)
+      }
+    }
+    reader.readAsText(file)
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ""
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -35,17 +107,37 @@ export const SettingsPage = ({ onClearData }: { onClearData: () => void }) => {
         {/* Data Management */}
         <div className="space-y-4">
           <h3 className="text-lg font-medium">Data Management</h3>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between p-4 border rounded-lg">
-              <div>
-                <p className="font-medium">Clear All Data</p>
-                <p className="text-sm text-muted-foreground">Remove all keys, armors, and profiles</p>
-              </div>
+          <div className="flex items-center justify-between p-4 border rounded-lg">
+            <div>
+              <p className="font-medium">Data Management</p>
+              <p className="text-sm text-muted-foreground">Backup, restore, or clear your data</p>
+            </div>
+            <div className="flex gap-2">
               <Button 
-                variant="destructive" 
-                onClick={() => setIsClearDataDialogOpen(true)}
+                variant="outline" 
+                size="icon"
+                onClick={handleExport}
+                disabled={!onExportData}
+                title="Export Data"
               >
-                Clear Data
+                <Download className="h-4 w-4" />
+              </Button>
+              <Button 
+                variant="outline" 
+                size="icon"
+                onClick={() => setIsImportDialogOpen(true)}
+                disabled={!onImportData}
+                title="Import Data"
+              >
+                <Upload className="h-4 w-4" />
+              </Button>
+              <Button 
+                variant="outline" 
+                size="icon"
+                onClick={() => setIsClearDataDialogOpen(true)}
+                title="Clear All Data"
+              >
+                <Trash2 className="h-4 w-4 text-red-500" />
               </Button>
             </div>
           </div>
@@ -85,6 +177,128 @@ export const SettingsPage = ({ onClearData }: { onClearData: () => void }) => {
           </div>
         </div>
       </div>
+
+      {/* Export Data Dialog */}
+      <Dialog open={isExportDialogOpen} onOpenChange={setIsExportDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Export Data</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid gap-2">
+              <Label htmlFor="export-data">Backup Data (JSON)</Label>
+              <Textarea
+                id="export-data"
+                value={exportData}
+                readOnly
+                className="min-h-[300px] font-mono text-sm"
+                placeholder="Exported data will appear here..."
+              />
+            </div>
+            <div className="flex items-center justify-between text-sm text-muted-foreground">
+              <span>
+                Ready to export your data
+              </span>
+              <span>arena.report Backup</span>
+            </div>
+          </div>
+          <DialogFooter className="flex gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                navigator.clipboard.writeText(exportData)
+                // You might want to show a toast notification here
+              }}
+            >
+              Copy to Clipboard
+            </Button>
+            <Button 
+              onClick={() => {
+                const blob = new Blob([exportData], { type: "application/json" })
+                const url = URL.createObjectURL(blob)
+                const a = document.createElement("a")
+                a.href = url
+                a.download = `arena-report-backup-${new Date().toISOString().split("T")[0]}.json`
+                document.body.appendChild(a)
+                a.click()
+                document.body.removeChild(a)
+                URL.revokeObjectURL(url)
+              }}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Download File
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Import Data Dialog */}
+      <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Import Data</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid gap-2">
+              <Label htmlFor="import-data">Backup Data (JSON)</Label>
+              <Textarea
+                id="import-data"
+                value={importData}
+                onChange={(e) => {
+                  setImportData(e.target.value)
+                  setImportError("")
+                }}
+                className="min-h-[300px] font-mono text-sm"
+                placeholder="Paste your backup data here or upload a file..."
+              />
+              {importError && (
+                <p className="text-sm text-red-500">{importError}</p>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <Input
+                ref={fileInputRef}
+                type="file"
+                accept=".json"
+                onChange={handleFileUpload}
+                className="hidden"
+              />
+              <Button
+                variant="outline"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                Upload File
+              </Button>
+              <p className="text-sm text-muted-foreground">
+                Upload a .json backup file
+              </p>
+            </div>
+            <div className="bg-muted/50 p-3 rounded-lg">
+              <h4 className="text-sm font-medium mb-2">Import Notes:</h4>
+              <ul className="text-sm text-muted-foreground space-y-1">
+                <li>• This will replace all your current data</li>
+                <li>• Make sure you have a backup before importing</li>
+                <li>• Only import data from trusted sources</li>
+              </ul>
+            </div>
+          </div>
+          <DialogFooter className="flex gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => setIsImportDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleImport}
+              disabled={!importData.trim() || isImporting}
+            >
+              {isImporting ? "Importing..." : "Import Data"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Cookie Policy Dialog */}
       <Dialog open={cookieDialogOpen} onOpenChange={setCookieDialogOpen}>
@@ -217,6 +431,7 @@ export const SettingsPage = ({ onClearData }: { onClearData: () => void }) => {
                 <li>Clear all data using the "Clear All Data" button in Settings</li>
                 <li>Manually delete individual items through the application interface</li>
                 <li>Clear browser data to remove all locally stored information</li>
+                <li>Export and import data using the new backup features</li>
               </ul>
             </div>
             
@@ -243,6 +458,7 @@ export const SettingsPage = ({ onClearData }: { onClearData: () => void }) => {
               <ul className="list-disc list-inside text-muted-foreground mt-2 space-y-1">
                 <li>Use our service without providing any personal information</li>
                 <li>Delete all your data at any time using the clear data function</li>
+                <li>Export and backup your data using the new export feature</li>
                 <li>Opt out of any non-essential data collection by adjusting your browser settings</li>
               </ul>
             </div>
